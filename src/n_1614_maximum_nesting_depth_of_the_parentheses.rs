@@ -33,4 +33,8 @@ mod test {
     fn test_3(){
         assert_eq!(Solution::max_depth("()()".to_string()), 1);
     }
+    #[test]
+    fn test_4(){
+        assert_eq!(Solution::max_depth("(AB)(1 + (ABC))".to_string()), 2);
+    }
 }
