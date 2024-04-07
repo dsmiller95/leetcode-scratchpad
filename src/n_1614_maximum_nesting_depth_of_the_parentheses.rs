@@ -3,22 +3,18 @@ struct Solution{}
 impl Solution {
 
     pub fn max_depth(s: String) -> i32 {
-        let mut depth = 0;
-        let mut max_depth = 0;
+        let mut depth: i8 = 0;
+        let mut max_depth: i8 = 0;
         for char in s.chars() {
-            match char {
-                '(' => {
-                    depth += 1;
-                    max_depth = max_depth.max(depth);
-                },
-                ')' => {
-                    depth -= 1;
-                },
-                _ => {}
+            depth += match char {
+                '(' => 1,
+                ')' => -1,
+                _ => 0
             };
+            max_depth = max_depth.max(depth);
         }
 
-        max_depth
+        max_depth as i32
     }
 }
 
