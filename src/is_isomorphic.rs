@@ -6,15 +6,15 @@ impl Solution {
     pub fn is_isomorphic(s: String, t: String) -> bool {
         if s.len() != t.len() { return false; }
 
-        let ord_a = Self::map_to_ordering_id(s.chars());
-        let ord_b = Self::map_to_ordering_id(t.chars());
+        let ord_a = Self::map_to_ordering_id(s.chars(), 40);
+        let ord_b = Self::map_to_ordering_id(t.chars(), 40);
 
         ord_a.eq(ord_b)
     }
 
-    fn map_to_ordering_id(bytes: impl Iterator<Item = char>) -> impl Iterator<Item = usize>{
+    fn map_to_ordering_id(bytes: impl Iterator<Item = char>, capacity: usize) -> impl Iterator<Item = usize>{
         // use linear search, assuming total n is low, linear search may be fine.
-        let mut remapped_so_far = HashMap::new();
+        let mut remapped_so_far = HashMap::with_capacity(capacity);
         bytes.into_iter().enumerate()
             .map(move |(index, in_byte)| {
                 if let Some(&mapped_id) = remapped_so_far.get(&in_byte) {
@@ -42,7 +42,7 @@ mod test {
 
     #[test]
     fn ordering_ids(){
-        let ordering: Vec<usize> = Solution::map_to_ordering_id("george".chars()).collect();
+        let ordering: Vec<usize> = Solution::map_to_ordering_id("george".chars(), 40).collect();
         assert_eq!(ordering, vec![0, 1, 2, 3, 0, 1])
     }
 }
