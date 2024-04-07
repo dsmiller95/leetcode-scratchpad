@@ -6,12 +6,16 @@ impl Solution {
         let mut depth = 0;
         let mut max_depth = 0;
         for char in s.chars() {
-            depth += match char {
-                '(' => 1,
-                ')' => -1,
-                _ => 0
+            match char {
+                '(' => {
+                    depth += 1;
+                    max_depth = max_depth.max(depth);
+                },
+                ')' => {
+                    depth -= 1;
+                },
+                _ => {}
             };
-            max_depth = max_depth.max(depth);
         }
 
         max_depth
