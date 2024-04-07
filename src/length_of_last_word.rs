@@ -10,3 +10,12 @@ impl Solution {
             .count() as i32
     }
 }
+
+
+mod test {
+    use super::*;
+    #[test]
+    fn test_length_of_last_word() {
+        assert_eq!(Solution::length_of_last_word("Hello World".to_string()), 5);
+    }
+}
