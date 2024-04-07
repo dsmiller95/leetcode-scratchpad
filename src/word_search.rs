@@ -1,5 +1,3 @@
-use std::ops::{Index, IndexMut};
-
 struct Solution{}
 
 
@@ -71,56 +69,6 @@ impl Solution {
     }
 }
 
-
-
-struct Vector2D {x: usize, y: usize}
-
-struct Vec2DWrapper<T>{
-    pub data: Vec<Vec<T>>
-}
-
-impl<T> Index<Vector2D> for Vec2DWrapper<T> {
-    type Output = T;
-
-    fn index(&self, index: Vector2D) -> &Self::Output {
-        self.data
-            .index(index.x)
-            .index(index.y)
-    }
-}
-
-impl<T> IndexMut<Vector2D> for Vec2DWrapper<T>{
-    fn index_mut(&mut self, index: Vector2D) -> &mut Self::Output {
-        self.data
-            .index_mut(index.x)
-            .index_mut(index.y)
-    }
-}
-
-impl<T> Vec2DWrapper<T>{
-    fn new(data: Vec<Vec<T>>) -> Vec2DWrapper<T> {
-        // TODO: validate non-jagged?
-        Vec2DWrapper {
-            data
-        }
-    }
-
-    fn size(&self) -> Vector2D {
-        return Vector2D {x: self.data.len(), y: self.data[0].len()};
-    }
-}
-
-impl<T> Vec2DWrapper<T> where T : Copy{
-    fn new_blank(size: Vector2D, default: T) -> Vec2DWrapper<T> {
-        let data = (0..size.x).map(
-            |_| vec![default; size.y]
-        ).collect();
-
-        Vec2DWrapper{
-            data
-        }
-    }
-}
 
 mod test {
     use super::*;
