@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 struct Solution{}
 
 impl Solution {
@@ -12,18 +14,16 @@ impl Solution {
 
     fn map_to_ordering_id(bytes: impl Iterator<Item = char>) -> impl Iterator<Item = usize>{
         // use linear search, assuming total n is low, linear search may be fine.
-        let mut remapped_so_far: Vec<char> = vec![];
-        bytes.into_iter()
-            .map(move |in_byte| {
-                let index_of_unique = remapped_so_far
-                    .iter()
-                    .position(|x| *x == in_byte)
-                    .unwrap_or_else(|| {
-                        remapped_so_far.push(in_byte);
-                        remapped_so_far.len() - 1
-                    });
+        let mut remapped_so_far = HashMap::new();
+        bytes.into_iter().enumerate()
+            .map(move |(index, in_byte)| {
+                if let Some(&mapped_id) = remapped_so_far.get(&in_byte) {
+                    return mapped_id
+                }
 
-                index_of_unique
+                let mapped_id = index;
+                remapped_so_far.insert(in_byte, mapped_id);
+                mapped_id
             })
     }
 }
