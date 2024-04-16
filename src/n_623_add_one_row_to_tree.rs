@@ -30,25 +30,24 @@ impl Solution {
         Self::add_one_row_in_place(root.clone(), val, depth);
         root
     }
-    fn add_one_row_in_place(root: TreeRef, val: i32, depth: i32) -> TreeRef {
+    fn add_one_row_in_place(root: TreeRef, val: i32, depth: i32) {
         let Some(root) = root else {
-            return None;
+            return;
         };
         match depth {
             ..=1 => panic!(),
             2 => {
-                let mut root_ref = root.borrow_mut();
+                let mut root = root.borrow_mut();
 
-                root_ref.left = Self::new_node(val, root_ref.left.take(), None);
-                root_ref.right = Self::new_node(val, None, root_ref.right.take());
+                root.left = Self::new_node(val, root.left.take(), None);
+                root.right = Self::new_node(val, None, root.right.take());
             }
             3.. => {
-                let mut root_ref = root.borrow_mut();
-                root_ref.left = Self::add_one_row_in_place(root_ref.left.take(), val, depth - 1);
-                root_ref.right = Self::add_one_row_in_place(root_ref.right.take(), val, depth - 1);
+                let mut root = root.borrow();
+                Self::add_one_row_in_place(root.left.clone(), val, depth - 1);
+                Self::add_one_row_in_place(root.right.clone(), val, depth - 1);
             }
         }
-        Some(root)
     }
 
     fn new_node(val: i32, left: TreeRef, right: TreeRef) -> TreeRef {
