@@ -34,18 +34,19 @@ impl Solution {
         let Some(root) = root else {
             return;
         };
-        if depth == 2 {
-            let mut root = root.borrow_mut();
+        match depth {
+            ..=1 => panic!(),
+            2 => {
+                let mut root = root.borrow_mut();
 
-            root.left = Self::new_node(val, root.left.take(), None);
-            root.right = Self::new_node(val, None, root.right.take());
-
-            return;
-        }
-        {
-            let root_ref = root.borrow();
-            Self::add_one_row_in_place(root_ref.left.clone(), val, depth - 1);
-            Self::add_one_row_in_place(root_ref.right.clone(), val, depth - 1);
+                root.left = Self::new_node(val, root.left.take(), None);
+                root.right = Self::new_node(val, None, root.right.take());
+            }
+            3.. => {
+                let root_ref = root.borrow();
+                Self::add_one_row_in_place(root_ref.left.clone(), val, depth - 1);
+                Self::add_one_row_in_place(root_ref.right.clone(), val, depth - 1);
+            }
         }
     }
 
