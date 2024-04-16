@@ -35,17 +35,11 @@ impl Solution {
             return;
         };
         if depth == 2 {
-            let new_root = {
-                let root_ref = root.borrow();
-                let new_root = TreeNode {
-                    val: root_ref.val,
-                    left: Self::new_node(val, root_ref.left.clone(), None),
-                    right: Self::new_node(val, None, root_ref.right.clone()),
-                };
-                RefCell::new(new_root)
-            };
+            let mut root = root.borrow_mut();
 
-            root.swap(&new_root);
+            root.left = Self::new_node(val, root.left.take(), None);
+            root.right = Self::new_node(val, None, root.right.take());
+
             return;
         }
         {
