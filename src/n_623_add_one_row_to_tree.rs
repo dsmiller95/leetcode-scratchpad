@@ -1,26 +1,25 @@
 // Definition for a binary tree node.
 #[derive(Debug, PartialEq, Eq)]
 pub struct TreeNode {
-  pub val: i32,
-  pub left: Option<Rc<RefCell<TreeNode>>>,
-  pub right: Option<Rc<RefCell<TreeNode>>>,
+    pub val: i32,
+    pub left: Option<Rc<RefCell<TreeNode>>>,
+    pub right: Option<Rc<RefCell<TreeNode>>>,
 }
 
 impl TreeNode {
-  #[inline]
-  pub fn new(val: i32) -> Self {
-    TreeNode {
-      val,
-      left: None,
-      right: None
+    #[inline]
+    pub fn new(val: i32) -> Self {
+        TreeNode {
+            val,
+            left: None,
+            right: None,
+        }
     }
-  }
 }
 struct Solution;
 
-
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 type TreeRef = Option<Rc<RefCell<TreeNode>>>;
 impl Solution {
@@ -31,7 +30,7 @@ impl Solution {
         if depth == 1 {
             return Self::new_node(val, Some(root), None);
         }
-        if depth == 2{
+        if depth == 2 {
             let new_root = {
                 let root_ref = root.borrow();
                 let new_root = TreeNode {
@@ -55,12 +54,8 @@ impl Solution {
         Some(root)
     }
 
-    fn new_node(val: i32, left: TreeRef, right: TreeRef) -> TreeRef{
-        let node = TreeNode{
-            val,
-            left,
-            right
-        };
+    fn new_node(val: i32, left: TreeRef, right: TreeRef) -> TreeRef {
+        let node = TreeNode { val, left, right };
         Option::Some(Rc::new(RefCell::new(node)))
     }
 }
