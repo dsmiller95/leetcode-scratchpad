@@ -24,12 +24,16 @@ use std::rc::Rc;
 type TreeRef = Option<Rc<RefCell<TreeNode>>>;
 impl Solution {
     pub fn add_one_row(root: TreeRef, val: i32, depth: i32) -> TreeRef {
-        let Some(root) = root else {
-            return None;
-        };
         if depth == 1 {
-            return Self::new_node(val, Some(root), None);
+            return Self::new_node(val, root, None);
         }
+        Self::add_one_row_in_place(root.clone(), val, depth);
+        root
+    }
+    fn add_one_row_in_place(root: TreeRef, val: i32, depth: i32) {
+        let Some(root) = root else {
+            return;
+        };
         if depth == 2 {
             let new_root = {
                 let root_ref = root.borrow();
@@ -42,16 +46,13 @@ impl Solution {
             };
 
             root.swap(&new_root);
-            return Some(root);
+            return;
         }
         {
             let root_ref = root.borrow();
-            let _new_left = Self::add_one_row(root_ref.left.clone(), val, depth - 1);
-            let _new_right = Self::add_one_row(root_ref.right.clone(), val, depth - 1);
+            Self::add_one_row_in_place(root_ref.left.clone(), val, depth - 1);
+            Self::add_one_row_in_place(root_ref.right.clone(), val, depth - 1);
         }
-        // changes apply in-place, swapping out references underneath the ref cells, so we can throw out return value
-
-        Some(root)
     }
 
     fn new_node(val: i32, left: TreeRef, right: TreeRef) -> TreeRef {
