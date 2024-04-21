@@ -43,7 +43,7 @@ impl Solution {
                 root.right = Self::new_node(val, None, root.right.take());
             }
             3.. => {
-                let mut root = root.borrow();
+                let root = root.borrow();
                 Self::add_one_row_in_place(root.left.clone(), val, depth - 1);
                 Self::add_one_row_in_place(root.right.clone(), val, depth - 1);
             }
