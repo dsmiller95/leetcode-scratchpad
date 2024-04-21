@@ -6,34 +6,34 @@ impl Solution {
         if source == destination {
             return true;
         }
+        let mut edges = edges;
         let mut reachable_from_source = HashSet::new();
         let mut reachable_from_dest = HashSet::new();
-        let mut edges = edges.into_iter().map(|x| (x[0], x[1])).collect::<Vec<_>>();
         loop {
             let mut modified = false;
-            for edge in edges.iter_mut().filter(|x| x.0 != x.1) {
-                if edge == &(source, destination) {
+            for edge in edges.iter_mut().filter(|x| x[0] != x[1]) {
+                if edge == &[source, destination] {
                     return true;
                 }
-                if edge == &(destination, source) {
+                if edge == &[destination, source] {
                     return true;
                 }
-                if edge.0 == source {
-                    reachable_from_source.insert(edge.1);
-                    edge.1 = source;
+                if edge[0] == source {
+                    reachable_from_source.insert(edge[1]);
+                    edge[1] = source;
                     modified = true;
-                } else if edge.1 == source {
-                    reachable_from_source.insert(edge.0);
-                    edge.0 = source;
+                } else if edge[1] == source {
+                    reachable_from_source.insert(edge[0]);
+                    edge[0] = source;
                     modified = true;
                 }
-                if edge.0 == destination {
-                    reachable_from_dest.insert(edge.1);
-                    edge.1 = destination;
+                if edge[0] == destination {
+                    reachable_from_dest.insert(edge[1]);
+                    edge[1] = destination;
                     modified = true;
-                } else if edge.1 == destination {
-                    reachable_from_dest.insert(edge.0);
-                    edge.0 = destination;
+                } else if edge[1] == destination {
+                    reachable_from_dest.insert(edge[0]);
+                    edge[0] = destination;
                     modified = true;
                 }
             }
@@ -46,11 +46,7 @@ impl Solution {
             {
                 return true;
             }
-            for vertex in edges
-                .iter_mut()
-                .filter(|x| x.0 != x.1)
-                .flat_map(|x| [&mut x.0, &mut x.1])
-            {
+            for vertex in edges.iter_mut().filter(|x| x[0] != x[1]).flatten() {
                 let reach_dst_src = (
                     reachable_from_dest.contains(vertex),
                     reachable_from_source.contains(vertex),
