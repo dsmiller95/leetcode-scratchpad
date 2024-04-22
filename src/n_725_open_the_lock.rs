@@ -1,7 +1,7 @@
 use core::panic;
+use std::collections::hash_map::Entry;
 use std::{
     collections::{BinaryHeap, HashMap},
-    fmt::write,
     num::ParseIntError,
 };
 
@@ -14,52 +14,91 @@ struct AStarComboPather {
     pub frontier: BinaryHeap<PriorityHeapEntry<CombinationPoint, i16>>,
 }
 
+#[derive(Clone, Copy)]
 struct ComboVisitData {
-    pub visited: bool,
     pub shortest_path_len: u16,
 }
 
 impl AStarComboPather {
+    fn new(target_point: CombinationPoint, blocked_points: Vec<CombinationPoint>) -> Self {
+        Self {
+            target_point,
+            blocked_points,
+            visited_points: HashMap::new(),
+            frontier: BinaryHeap::new(),
+        }
+    }
+
     pub fn solve_path(&mut self, start: CombinationPoint) -> Option<u16> {
-        self.add_frontier(start);
+        self.visit_point(start, 0);
 
         while !self.frontier.is_empty() {
             let next_frontier = self.frontier.pop().unwrap().point;
-            let Occupied(point_data) = self.visited_points.entry(next_frontier) else {
-                panic!("must have entry for every item in frontier");
-            };
+            let point_data = self.visited_points.get(&next_frontier).unwrap().to_owned();
             for neighbor in next_frontier.neighbors() {
-                self.try_add_frontier(neighbor);
+                self.visit_point(neighbor, point_data.shortest_path_len + 1)
+            }
+
+            if let Some(visited_data) = self.visited_points.get(&self.target_point) {
+                return Some(visited_data.shortest_path_len);
             }
         }
-        todo!()
+
+        None
     }
 
-    pub fn add_frontier(&mut self, point: CombinationPoint) {
-        let hueristic: i16 = point.distance(&self.target_point).try_into().unwrap();
+    pub fn visit_point(&mut self, point: CombinationPoint, dist_from_start: u16) {
+        let visited_data_entry = match self.visited_points.entry(point) {
+            // if an entry exists and is a shorter distance than this entry, noop. we've already
+            // visited it and dont need to again.
+            Entry::Occupied(existing) if existing.get().shortest_path_len < dist_from_start => {
+                return;
+            }
+            existing => existing,
+        };
+        let hueristic: i16 = point.distance(&self.target_point).into();
         self.frontier.push(PriorityHeapEntry {
             // binary heap takes maximum value off top. we want to minimize distance.
             priority: -hueristic,
             point,
-        })
-    }
+        });
+        let visit_data = ComboVisitData {
+            shortest_path_len: dist_from_start,
+        };
 
-    fn try_add_frontier(&self, neighbor: CombinationPoint) {
-        todo!()
+        let entry_data = visited_data_entry.or_insert(visit_data);
+        *entry_data = visit_data;
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone)]
 struct CombinationPoint {
     pub code: u16,
 }
 
 impl CombinationPoint {
-    pub fn distance(&self, other: &Self) -> u16 {
-        todo!()
+    pub fn distance(&self, other: &Self) -> u8 {
+        let comp_a = self.components();
+        let comp_b = other.components();
+        let mut res: u8 = 0;
+        for i in 0..4 {
+            res += comp_a[i] + comp_b[i];
+        }
+        res
     }
     pub fn neighbors(&self) -> impl Iterator<Item = CombinationPoint> {
         vec![].into_iter()
+    }
+    fn components(&self) -> [u8; 4] {
+        let mut code = self.code;
+        let a = (code % 10) as u8;
+        code /= 10;
+        let b = (code % 10) as u8;
+        code /= 10;
+        let c = (code % 10) as u8;
+        code /= 10;
+        let d = (code % 10) as u8;
+        [a, b, c, d]
     }
 }
 
@@ -104,10 +143,18 @@ where
 
 impl Solution {
     pub fn open_lock(deadends: Vec<String>, target: String) -> i32 {
-        let target: u16 = target.parse().unwrap();
-        let deadends: Vec<u16> = deadends.into_iter().map(|x| x.parse().unwrap()).collect();
+        let target: CombinationPoint = target.try_into().unwrap();
+        let deadends: Vec<CombinationPoint> = deadends
+            .into_iter()
+            .map(|x| x.try_into().unwrap())
+            .collect();
+        let mut solver = AStarComboPather::new(target, deadends);
+        let start: CombinationPoint = "0000".to_string().try_into().unwrap();
 
-        0
+        match solver.solve_path(start) {
+            Some(x) => x.into(),
+            None => -1,
+        }
     }
 }
 
