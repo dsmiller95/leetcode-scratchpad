@@ -59,10 +59,10 @@ impl AStarComboPather {
             }
             existing => existing,
         };
-        let hueristic: i16 = point.distance(&self.target_point).into();
+        let heuristic_dist = point.distance(&self.target_point) as u16 + dist_from_start;
         self.frontier.push(PriorityHeapEntry {
             // binary heap takes maximum value off top. we want to minimize distance.
-            priority: -hueristic,
+            priority: -(heuristic_dist as i16),
             point,
         });
         let visit_data = ComboVisitData {
