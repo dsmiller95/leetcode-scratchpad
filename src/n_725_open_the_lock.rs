@@ -2,6 +2,7 @@ struct Solution {}
 
 use core::panic;
 use std::collections::hash_map::Entry;
+use std::collections::HashSet;
 use std::fmt::write;
 use std::{
     collections::{BinaryHeap, HashMap},
@@ -10,7 +11,7 @@ use std::{
 
 struct AStarComboPather {
     pub target_point: CombinationPoint,
-    pub blocked_points: Vec<CombinationPoint>,
+    pub blocked_points: HashSet<CombinationPoint>,
     pub visited_points: HashMap<CombinationPoint, ComboVisitData>,
     pub frontier: BinaryHeap<PriorityHeapEntry<CombinationPoint, i16>>,
 }
@@ -24,7 +25,7 @@ impl AStarComboPather {
     fn new(target_point: CombinationPoint, blocked_points: Vec<CombinationPoint>) -> Self {
         Self {
             target_point,
-            blocked_points,
+            blocked_points: blocked_points.into_iter().collect(),
             visited_points: HashMap::new(),
             frontier: BinaryHeap::new(),
         }
