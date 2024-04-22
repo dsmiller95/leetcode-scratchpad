@@ -73,7 +73,7 @@ impl AStarComboPather {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 struct CombinationPoint {
     pub code: u16,
 }
@@ -103,19 +103,19 @@ impl CombinationPoint {
     }
 
     fn components(&self) -> [u8; 4] {
-        let mut code = self.code;
-        let a = (code % 10) as u8;
-        code /= 10;
-        let b = (code % 10) as u8;
-        code /= 10;
-        let c = (code % 10) as u8;
-        code /= 10;
-        let d = (code % 10) as u8;
-        [a, b, c, d]
+        let code = self.code;
+        [
+            (code & 0xF) as u8,
+            ((code >> 4) & 0xF) as u8,
+            ((code >> 8) & 0xF) as u8,
+            ((code >> 12) & 0xF) as u8,
+        ]
     }
     fn from_components(comp: [u8; 4]) -> Self {
-        let code =
-            comp[0] as u16 + comp[1] as u16 * 10 + comp[2] as u16 * 100 + comp[3] as u16 * 1000;
+        let code = (comp[0] as u16)
+            | ((comp[1] as u16) << 4)
+            | ((comp[2] as u16) << 8)
+            | ((comp[3] as u16) << 12);
         Self { code }
     }
     #[inline(always)]
@@ -126,12 +126,38 @@ impl CombinationPoint {
     }
 }
 
+#[cfg(test)]
+mod test_point {
+    use super::CombinationPoint;
+
+    #[test]
+    fn components_conversion_consistent() {
+        let point: CombinationPoint = "9201".to_string().try_into().unwrap();
+        assert_eq!(point, CombinationPoint::from_components(point.components()))
+    }
+
+    #[test]
+    fn components_format_as_expected() {
+        let point: CombinationPoint = "9201".to_string().try_into().unwrap();
+        assert_eq!([9, 2, 0, 1], point.components())
+    }
+}
+
 impl TryFrom<String> for CombinationPoint {
     type Error = ParseIntError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        let code: u16 = value.parse()?;
-        Ok(Self { code })
+        let mut code: u16 = value.parse()?;
+        let a = (code % 10) as u8;
+        code /= 10;
+        let b = (code % 10) as u8;
+        code /= 10;
+        let c = (code % 10) as u8;
+        code /= 10;
+        let d = (code % 10) as u8;
+        let components = [d, c, b, a];
+
+        Ok(Self::from_components(components))
     }
 }
 
