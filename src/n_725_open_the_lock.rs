@@ -2,8 +2,7 @@ struct Solution {}
 
 use core::panic;
 use std::collections::hash_map::Entry;
-use std::collections::HashSet;
-use std::fmt::write;
+use std::collections::{HashSet, VecDeque};
 use std::{
     collections::{BinaryHeap, HashMap},
     num::ParseIntError,
@@ -13,7 +12,7 @@ struct AStarComboPather {
     pub target_point: CombinationPoint,
     pub blocked_points: HashSet<CombinationPoint>,
     pub visited_points: HashMap<CombinationPoint, ComboVisitData>,
-    pub frontier: BinaryHeap<PriorityHeapEntry<CombinationPoint, i16>>,
+    pub frontier: VecDeque<CombinationPoint>,
 }
 
 #[derive(Clone, Copy)]
@@ -27,7 +26,7 @@ impl AStarComboPather {
             target_point,
             blocked_points: blocked_points.into_iter().collect(),
             visited_points: HashMap::new(),
-            frontier: BinaryHeap::new(),
+            frontier: VecDeque::new(),
         }
     }
 
@@ -35,7 +34,7 @@ impl AStarComboPather {
         self.visit_point(start, 0);
 
         while !self.frontier.is_empty() {
-            let next_frontier = self.frontier.pop().unwrap().point;
+            let next_frontier = self.frontier.pop_front().unwrap();
             let point_data = self.visited_points.get(&next_frontier).unwrap().to_owned();
             for neighbor in next_frontier.neighbors() {
                 self.visit_point(neighbor, point_data.shortest_path_len + 1)
@@ -60,12 +59,7 @@ impl AStarComboPather {
             }
             existing => existing,
         };
-        let heuristic_dist = point.distance(&self.target_point) as u16 + dist_from_start;
-        self.frontier.push(PriorityHeapEntry {
-            // binary heap takes maximum value off top. we want to minimize distance.
-            priority: -(heuristic_dist as i16),
-            point,
-        });
+        self.frontier.push_back(point);
         let visit_data = ComboVisitData {
             shortest_path_len: dist_from_start,
         };
