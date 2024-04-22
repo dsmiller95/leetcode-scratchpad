@@ -1,5 +1,6 @@
 use core::panic;
 use std::collections::hash_map::Entry;
+use std::fmt::write;
 use std::{
     collections::{BinaryHeap, HashMap},
     num::ParseIntError,
@@ -86,9 +87,20 @@ impl CombinationPoint {
         }
         res
     }
-    pub fn neighbors(&self) -> impl Iterator<Item = CombinationPoint> {
-        vec![].into_iter()
+    pub fn neighbors(&self) -> impl IntoIterator<Item = CombinationPoint> {
+        let comp = self.components();
+        [
+            Self::add_at_index(&comp, 0, 1),
+            Self::add_at_index(&comp, 0, 9),
+            Self::add_at_index(&comp, 1, 1),
+            Self::add_at_index(&comp, 1, 9),
+            Self::add_at_index(&comp, 2, 1),
+            Self::add_at_index(&comp, 2, 9),
+            Self::add_at_index(&comp, 3, 1),
+            Self::add_at_index(&comp, 3, 9),
+        ]
     }
+
     fn components(&self) -> [u8; 4] {
         let mut code = self.code;
         let a = (code % 10) as u8;
@@ -99,6 +111,17 @@ impl CombinationPoint {
         code /= 10;
         let d = (code % 10) as u8;
         [a, b, c, d]
+    }
+    fn from_components(comp: [u8; 4]) -> Self {
+        let code =
+            comp[0] as u16 + comp[1] as u16 * 10 + comp[2] as u16 * 100 + comp[3] as u16 * 1000;
+        Self { code }
+    }
+    #[inline(always)]
+    fn add_at_index(comp: &[u8; 4], index: usize, change: u8) -> Self {
+        let mut res = *comp;
+        res[index] = (res[index] + change) % 10;
+        Self::from_components(res)
     }
 }
 
