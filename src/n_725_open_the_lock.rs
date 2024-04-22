@@ -49,10 +49,13 @@ impl AStarComboPather {
     }
 
     pub fn visit_point(&mut self, point: CombinationPoint, dist_from_start: u16) {
+        if self.is_blocked(point) {
+            return;
+        }
         let visited_data_entry = match self.visited_points.entry(point) {
             // if an entry exists and is a shorter distance than this entry, noop. we've already
             // visited it and dont need to again.
-            Entry::Occupied(existing) if existing.get().shortest_path_len < dist_from_start => {
+            Entry::Occupied(existing) if existing.get().shortest_path_len <= dist_from_start => {
                 return;
             }
             existing => existing,
@@ -69,6 +72,10 @@ impl AStarComboPather {
 
         let entry_data = visited_data_entry.or_insert(visit_data);
         *entry_data = visit_data;
+    }
+
+    pub fn is_blocked(&self, point: CombinationPoint) -> bool {
+        self.blocked_points.contains(&point)
     }
 }
 
@@ -181,8 +188,8 @@ impl Solution {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use std::fmt::write;
 
     use crate::n_725_open_the_lock::Solution;
 
