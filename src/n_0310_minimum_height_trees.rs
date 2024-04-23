@@ -87,7 +87,8 @@ impl GraphNode {
 
 #[derive(Clone, Copy, Debug)]
 struct NodeData {
-    pub min_dist: Option<u16>,
+    pub min_child_dist: Option<u16>,
+    pub visited: bool,
 }
 
 impl Solution {
@@ -95,26 +96,41 @@ impl Solution {
         if n <= 0 {
             return vec![];
         }
-        let mut tree =
-            GraphStore::new_from_vec(n.try_into().unwrap(), edges, NodeData { min_dist: None });
+        let mut tree = GraphStore::new_from_vec(
+            n.try_into().unwrap(),
+            edges,
+            NodeData {
+                min_child_dist: None,
+                visited: false,
+            },
+        );
         let mut frontier: VecDeque<u16> = tree.get_leaf_indexes().collect();
         for leaf in frontier.iter() {
             let leaf_idx = *leaf as usize;
-            tree.node_data[leaf_idx] = NodeData { min_dist: Some(0) };
+            tree.node_data[leaf_idx] = NodeData {
+                min_child_dist: Some(0),
+                visited: true,
+            };
         }
 
         while !frontier.is_empty() {
             let next_idx = frontier.pop_front().unwrap() as usize;
             let my_data = tree.node_data.get_mut(next_idx).unwrap();
-            let min_dist = my_data.min_dist.unwrap();
+            my_data.visited = true;
+            let min_dist = my_data.min_child_dist.unwrap();
             let next_dist = min_dist + 1;
 
             for neighbor in tree.edges[next_idx].pointed_nodes.iter() {
                 let neighbor_idx = *neighbor as usize;
                 let neighbor_data = tree.node_data.get_mut(neighbor_idx).unwrap();
+                // in theory, we should only find exactly 1 non-visited neighbor, assuming this is
+                // a tree data structure
+                if neighbor_data.visited {
+                    continue;
+                }
 
-                match &mut neighbor_data.min_dist {
-                    // if the distance is shorter from this node, replace with shorter dist, then
+                match &mut neighbor_data.min_child_dist {
+                    // if the distance is greater from this node, replace with longer dist, then
                     // add neightbor to the frontier
                     Some(dst) if *dst > next_dist => {
                         *dst = next_dist;
@@ -134,14 +150,14 @@ impl Solution {
         let max_dist = tree
             .node_data
             .iter()
-            .map(|x| x.min_dist.unwrap())
+            .map(|x| x.min_child_dist.unwrap())
             .max()
             .unwrap();
 
         tree.node_data
             .iter()
             .enumerate()
-            .filter(|x| x.1.min_dist.unwrap() == max_dist)
+            .filter(|x| x.1.min_child_dist.unwrap() == max_dist)
             .map(|x| x.0 as i32)
             .collect()
     }
@@ -199,6 +215,18 @@ mod tests {
         let edges = [[0, 1]];
         let n = 2;
         let expected = [0, 1];
+
+        let edges = edges.map(|x| x.to_vec()).to_vec();
+        let expected = expected.to_vec();
+        let actual = Solution::find_min_height_trees(n, edges);
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn multiple_minimum_tree_two() {
+        let edges = [[0, 1], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6]];
+        let n = 7;
+        let expected = [1, 2];
 
         let edges = edges.map(|x| x.to_vec()).to_vec();
         let expected = expected.to_vec();
