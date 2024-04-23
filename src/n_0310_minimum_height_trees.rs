@@ -87,8 +87,117 @@ impl GraphNode {
 
 #[derive(Clone, Copy, Debug)]
 struct NodeData {
-    pub min_child_dist: Option<u16>,
-    pub visited: bool,
+    pub longest_children: [Option<u16>; 2],
+    pub longest_chain_origin: u16,
+}
+
+struct DfsData {
+    pub longest_children_len: [u16; 2],
+    pub longest_chain_len: u16,
+}
+
+struct DfsNodeData {
+    node: NodeData,
+    dfs: DfsData,
+}
+
+struct ChainPointer {
+    len: u16,
+    next: u16,
+}
+
+impl DfsNodeData {
+    fn default() -> Self {
+        Self {
+            node: NodeData {
+                longest_children: [None; 2],
+                longest_chain_origin: 0,
+            },
+            dfs: DfsData {
+                longest_children_len: [0; 2],
+
+                longest_chain_len: 0,
+            },
+        }
+    }
+
+    fn get_node_data(&self) -> NodeData {
+        self.node
+    }
+
+    fn get_longest_idx(&self) -> usize {
+        match self.dfs.longest_children_len {
+            [a, b] if a > b => 0,
+            [_, _] => 1,
+        }
+    }
+    fn get_shortest_idx(&self) -> usize {
+        match self.get_longest_idx() {
+            0 => 1,
+            1 => 0,
+            _ => panic!("index must only be 0 or 1"),
+        }
+    }
+
+    fn get_longest_child(&self) -> Option<ChainPointer> {
+        let longest = self.get_longest_idx();
+        let next = self.node.longest_children[longest]?;
+        Some(ChainPointer {
+            len: self.dfs.longest_children_len[longest],
+            next,
+        })
+    }
+
+    fn add_longer_child(&mut self, deepest_from_child: u16, from_child: u16) {
+        let idx = self.get_shortest_idx();
+        let len_from_self = deepest_from_child + 1;
+        if self.dfs.longest_children_len[idx] >= len_from_self {
+            // noop, the new child is shorter than the existing longest children
+            return;
+        }
+        self.dfs.longest_children_len[idx] = len_from_self;
+        self.node.longest_children[idx] = Some(from_child);
+    }
+
+    fn apply_child(&mut self, child: &DfsNodeData, child_id: u16) {
+        let longest_from_child = child.get_longest_child();
+        let child_depth = longest_from_child.map(|x| x.len).unwrap_or(0);
+        self.add_longer_child(child_depth, child_id);
+
+        if child.dfs.longest_chain_len > self.dfs.longest_chain_len {
+            self.dfs.longest_chain_len = child.dfs.longest_chain_len;
+            self.node.longest_chain_origin = child.node.longest_chain_origin;
+        }
+    }
+
+    fn use_own_chain_if_better(&mut self, self_id: u16) {
+        // include myself in the chain
+        let my_chain_len = self.dfs.longest_children_len[0] + self.dfs.longest_children_len[1] + 1;
+
+        if self.dfs.longest_chain_len >= my_chain_len {
+            return;
+        }
+
+        self.dfs.longest_chain_len = my_chain_len;
+        self.node.longest_chain_origin = self_id;
+    }
+
+    /// ensure the longest child is at index 0
+    fn sort_longest_children(&mut self) {
+        let will_swap = self.dfs.longest_children_len[0] < self.dfs.longest_children_len[1];
+        if !will_swap {
+            return;
+        }
+
+        self.dfs.longest_children_len.swap(0, 1);
+        self.node.longest_children.swap(0, 1);
+    }
+}
+
+struct LongestChain {
+    pub left: Vec<u16>,
+    pub right: Vec<u16>,
+    pub origin: u16,
 }
 
 impl Solution {
@@ -96,70 +205,76 @@ impl Solution {
         if n <= 0 {
             return vec![];
         }
-        let mut tree = GraphStore::new_from_vec(
-            n.try_into().unwrap(),
-            edges,
-            NodeData {
-                min_child_dist: None,
-                visited: false,
-            },
-        );
-        let mut frontier: VecDeque<u16> = tree.get_leaf_indexes().collect();
-        for leaf in frontier.iter() {
-            let leaf_idx = *leaf as usize;
-            tree.node_data[leaf_idx] = NodeData {
-                min_child_dist: Some(0),
-                visited: true,
-            };
+        let mut tree: GraphStore<Option<NodeData>> =
+            GraphStore::new_from_vec(n.try_into().unwrap(), edges, None);
+
+        let result_walk = Solution::dfs(0, u16::MAX, &mut tree);
+        tree.node_data[0] = Some(result_walk.node);
+
+        let chain_origin = result_walk.node.longest_chain_origin;
+        let chain_len = result_walk.dfs.longest_chain_len;
+
+        let chain = Solution::collect_chain(chain_origin, chain_len, &tree);
+        let chain_len = chain_len as usize;
+        assert_eq!(chain_len, chain.len());
+
+        if chain_len % 2 == 0 {
+            vec![
+                chain[chain_len / 2].into(),
+                chain[(chain_len / 2) + 1].into(),
+            ]
+        } else {
+            vec![chain[chain_len / 2].into()]
+        }
+    }
+    fn dfs(node: u16, parent: u16, tree: &mut GraphStore<Option<NodeData>>) -> DfsNodeData {
+        let children: Vec<u16> = tree.edges[node as usize]
+            .pointed_nodes
+            .iter()
+            .filter(|&&x| x != parent)
+            .copied()
+            .collect();
+
+        let mut self_data = DfsNodeData::default();
+        for child in children {
+            let child_data = Solution::dfs(child, node, tree);
+            self_data.apply_child(&child_data, child);
+
+            tree.node_data[child as usize] = Some(child_data.node);
+        }
+        self_data.use_own_chain_if_better(node);
+        self_data.sort_longest_children();
+
+        self_data
+    }
+    fn collect_chain(
+        chain_origin: u16,
+        chain_len: u16,
+        tree: &GraphStore<Option<NodeData>>,
+    ) -> VecDeque<u16> {
+        let mut res = VecDeque::with_capacity(chain_len as usize);
+        let node_data = tree.node_data[chain_origin as usize].unwrap();
+        res.push_front(chain_origin);
+
+        let mut next_node = node_data.longest_children[0];
+        while let Some(idx) = next_node {
+            res.push_front(idx);
+            let next_data = tree.node_data[idx as usize].unwrap();
+
+            // the longest child will be in index 0
+            next_node = next_data.longest_children[0]
         }
 
-        while !frontier.is_empty() {
-            let next_idx = frontier.pop_front().unwrap() as usize;
-            let my_data = tree.node_data.get_mut(next_idx).unwrap();
-            my_data.visited = true;
-            let min_dist = my_data.min_child_dist.unwrap();
-            let next_dist = min_dist + 1;
+        next_node = node_data.longest_children[1];
+        while let Some(idx) = next_node {
+            res.push_back(idx);
+            let next_data = tree.node_data[idx as usize].unwrap();
 
-            for neighbor in tree.edges[next_idx].pointed_nodes.iter() {
-                let neighbor_idx = *neighbor as usize;
-                let neighbor_data = tree.node_data.get_mut(neighbor_idx).unwrap();
-                // in theory, we should only find exactly 1 non-visited neighbor, assuming this is
-                // a tree data structure
-                if neighbor_data.visited {
-                    continue;
-                }
-
-                match &mut neighbor_data.min_child_dist {
-                    // if the distance is greater from this node, replace with longer dist, then
-                    // add neightbor to the frontier
-                    Some(dst) if *dst > next_dist => {
-                        *dst = next_dist;
-                        frontier.push_back(*neighbor);
-                    }
-                    // if distance is longer from this node, noop. don't add to frontier again
-                    Some(_) => {}
-                    // if None, then Some
-                    x => {
-                        *x = Some(next_dist);
-                        frontier.push_back(*neighbor);
-                    }
-                }
-            }
+            // the longest child will be in index 0
+            next_node = next_data.longest_children[0]
         }
 
-        let max_dist = tree
-            .node_data
-            .iter()
-            .map(|x| x.min_child_dist.unwrap())
-            .max()
-            .unwrap();
-
-        tree.node_data
-            .iter()
-            .enumerate()
-            .filter(|x| x.1.min_child_dist.unwrap() == max_dist)
-            .map(|x| x.0 as i32)
-            .collect()
+        res
     }
 }
 
