@@ -1,7 +1,7 @@
+struct Solution {}
+
 use core::panic;
 use std::collections::VecDeque;
-
-struct Solution {}
 
 struct GraphStore<TItem> {
     pub max_n: u16,
@@ -98,17 +98,15 @@ impl Solution {
         let mut tree =
             GraphStore::new_from_vec(n.try_into().unwrap(), edges, NodeData { min_dist: None });
         let mut frontier: VecDeque<u16> = tree.get_leaf_indexes().collect();
+        for leaf in frontier.iter() {
+            let leaf_idx = *leaf as usize;
+            tree.node_data[leaf_idx] = NodeData { min_dist: Some(0) };
+        }
 
         while !frontier.is_empty() {
             let next_idx = frontier.pop_front().unwrap() as usize;
             let my_data = tree.node_data.get_mut(next_idx).unwrap();
-            let min_dist = match my_data.min_dist {
-                Some(x) => x,
-                None => {
-                    my_data.min_dist = Some(0);
-                    0
-                }
-            };
+            let min_dist = my_data.min_dist.unwrap();
             let next_dist = min_dist + 1;
 
             for neighbor in tree.edges[next_idx].pointed_nodes.iter() {
@@ -189,6 +187,18 @@ mod tests {
         let edges = [[3, 0], [3, 1], [3, 2], [3, 4], [5, 4]];
         let n = 6;
         let expected = [3, 4];
+
+        let edges = edges.map(|x| x.to_vec()).to_vec();
+        let expected = expected.to_vec();
+        let actual = Solution::find_min_height_trees(n, edges);
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn tiny_tree() {
+        let edges = [[0, 1]];
+        let n = 2;
+        let expected = [0, 1];
 
         let edges = edges.map(|x| x.to_vec()).to_vec();
         let expected = expected.to_vec();
