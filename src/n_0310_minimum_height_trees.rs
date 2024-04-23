@@ -1,10 +1,12 @@
 use core::panic;
+use std::collections::VecDeque;
 
 struct Solution {}
 
-struct GraphStore {
+struct GraphStore<TItem> {
     pub max_n: u16,
     pub edges: Vec<GraphNode>,
+    pub node_data: Vec<TItem>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -12,28 +14,33 @@ struct GraphNode {
     pub pointed_nodes: Vec<u16>,
 }
 
-impl GraphStore {
-    fn new(n: u16) -> Self {
+impl<TItem> GraphStore<TItem>
+where
+    TItem: Clone,
+{
+    fn new(n: u16, default_node_val: TItem) -> Self {
         let default_node = GraphNode {
             pointed_nodes: vec![],
         };
+        let node_count = (n + 1) as usize;
         Self {
             max_n: n,
-            edges: vec![default_node; (n + 1) as usize],
+            edges: vec![default_node; node_count],
+            node_data: vec![default_node_val; node_count],
         }
     }
 
-    fn new_from_vec(n: u16, edges: Vec<Vec<i32>>) -> Self {
-        let mut tree = GraphStore::new(n - 1);
+    fn new_from_vec(n: u16, edges: Vec<Vec<i32>>, default_node: TItem) -> Self {
+        let mut tree = GraphStore::new(n - 1, default_node);
         for edge in edges {
             tree.add_edge(edge[0].try_into().unwrap(), edge[1].try_into().unwrap());
         }
         tree
     }
 
-    fn new_from_vec_max(edges: Vec<Vec<i32>>) -> Self {
+    fn new_from_vec_max(edges: Vec<Vec<i32>>, default_node: TItem) -> Self {
         let n = edges.iter().flat_map(|x| x.iter()).max().unwrap() + 1;
-        Self::new_from_vec(n.try_into().unwrap(), edges)
+        Self::new_from_vec(n.try_into().unwrap(), edges, default_node)
     }
 
     fn add_edge(&mut self, a: u16, b: u16) {
@@ -53,6 +60,14 @@ impl GraphStore {
     fn sort_leaf_first(&mut self) {
         self.edges.sort_unstable_by_key(|x| x.pointed_nodes.len());
     }
+
+    fn get_leaf_indexes(&self) -> impl Iterator<Item = u16> + '_ {
+        self.edges
+            .iter()
+            .enumerate()
+            .filter(|x| x.1.pointed_nodes.len() <= 1)
+            .map(|x| x.0 as u16)
+    }
 }
 
 impl GraphNode {
@@ -70,14 +85,67 @@ impl GraphNode {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+struct NodeData {
+    pub min_dist: Option<u16>,
+}
+
 impl Solution {
     pub fn find_min_height_trees(n: i32, edges: Vec<Vec<i32>>) -> Vec<i32> {
         if n <= 0 {
             return vec![];
         }
-        let mut tree = GraphStore::new_from_vec(n.try_into().unwrap(), edges);
-        tree.sort_leaf_first();
-        todo!()
+        let mut tree =
+            GraphStore::new_from_vec(n.try_into().unwrap(), edges, NodeData { min_dist: None });
+        let mut frontier: VecDeque<u16> = tree.get_leaf_indexes().collect();
+
+        while !frontier.is_empty() {
+            let next_idx = frontier.pop_front().unwrap() as usize;
+            let my_data = tree.node_data.get_mut(next_idx).unwrap();
+            let min_dist = match my_data.min_dist {
+                Some(x) => x,
+                None => {
+                    my_data.min_dist = Some(0);
+                    0
+                }
+            };
+            let next_dist = min_dist + 1;
+
+            for neighbor in tree.edges[next_idx].pointed_nodes.iter() {
+                let neighbor_idx = *neighbor as usize;
+                let neighbor_data = tree.node_data.get_mut(neighbor_idx).unwrap();
+
+                match &mut neighbor_data.min_dist {
+                    // if the distance is shorter from this node, replace with shorter dist, then
+                    // add neightbor to the frontier
+                    Some(dst) if *dst > next_dist => {
+                        *dst = next_dist;
+                        frontier.push_back(*neighbor);
+                    }
+                    // if distance is longer from this node, noop. don't add to frontier again
+                    Some(_) => {}
+                    // if None, then Some
+                    x => {
+                        *x = Some(next_dist);
+                        frontier.push_back(*neighbor);
+                    }
+                }
+            }
+        }
+
+        let max_dist = tree
+            .node_data
+            .iter()
+            .map(|x| x.min_dist.unwrap())
+            .max()
+            .unwrap();
+
+        tree.node_data
+            .iter()
+            .enumerate()
+            .filter(|x| x.1.min_dist.unwrap() == max_dist)
+            .map(|x| x.0 as i32)
+            .collect()
     }
 }
 
@@ -99,7 +167,7 @@ mod tests {
         ];
 
         let edges = edges.map(|x| x.to_vec()).to_vec();
-        let mut tree = GraphStore::new_from_vec_max(edges);
+        let mut tree = GraphStore::new_from_vec_max(edges, 0);
         tree.sort_leaf_first();
 
         assert_eq!(expected.to_vec(), tree.edges);
