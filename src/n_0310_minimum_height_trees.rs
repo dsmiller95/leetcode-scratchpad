@@ -88,10 +88,10 @@ impl GraphNode {
 #[derive(Clone, Copy, Debug)]
 struct NodeData {
     pub longest_children: [Option<u16>; 2],
-    pub longest_chain_origin: u16,
 }
 
 struct DfsData {
+    pub longest_chain_origin: u16,
     pub longest_children_len: [u16; 2],
     pub longest_chain_len: u16,
 }
@@ -111,9 +111,9 @@ impl DfsNodeData {
         Self {
             node: NodeData {
                 longest_children: [None; 2],
-                longest_chain_origin: 0,
             },
             dfs: DfsData {
+                longest_chain_origin: 0,
                 longest_children_len: [0; 2],
 
                 longest_chain_len: 0,
@@ -166,7 +166,7 @@ impl DfsNodeData {
 
         if child.dfs.longest_chain_len > self.dfs.longest_chain_len {
             self.dfs.longest_chain_len = child.dfs.longest_chain_len;
-            self.node.longest_chain_origin = child.node.longest_chain_origin;
+            self.dfs.longest_chain_origin = child.dfs.longest_chain_origin;
         }
     }
 
@@ -179,7 +179,7 @@ impl DfsNodeData {
         }
 
         self.dfs.longest_chain_len = my_chain_len;
-        self.node.longest_chain_origin = self_id;
+        self.dfs.longest_chain_origin = self_id;
     }
 
     /// ensure the longest child is at index 0
@@ -211,7 +211,7 @@ impl Solution {
         let result_walk = Solution::dfs(0, u16::MAX, &mut tree);
         tree.node_data[0] = Some(result_walk.node);
 
-        let chain_origin = result_walk.node.longest_chain_origin;
+        let chain_origin = result_walk.dfs.longest_chain_origin;
         let chain_len = result_walk.dfs.longest_chain_len;
 
         let mut chain = Solution::collect_chain(chain_origin, chain_len, &tree);
