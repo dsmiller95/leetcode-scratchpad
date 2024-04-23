@@ -214,14 +214,15 @@ impl Solution {
         let chain_origin = result_walk.node.longest_chain_origin;
         let chain_len = result_walk.dfs.longest_chain_len;
 
-        let chain = Solution::collect_chain(chain_origin, chain_len, &tree);
+        let mut chain = Solution::collect_chain(chain_origin, chain_len, &tree);
+        let chain = chain.make_contiguous();
         let chain_len = chain_len as usize;
         assert_eq!(chain_len, chain.len());
 
         if chain_len % 2 == 0 {
             vec![
                 chain[chain_len / 2].into(),
-                chain[(chain_len / 2) + 1].into(),
+                chain[(chain_len / 2) - 1].into(),
             ]
         } else {
             vec![chain[chain_len / 2].into()]
