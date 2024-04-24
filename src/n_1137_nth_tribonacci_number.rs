@@ -1,18 +1,24 @@
 struct Solution {}
 
+const fn tribonacci_table<const TABLE_SIZE: usize>() -> [i32; TABLE_SIZE] {
+    let mut result = [0; TABLE_SIZE];
+    result[0] = 0;
+    result[1] = 1;
+    result[2] = 1;
+
+    let mut i = 3;
+    while i < TABLE_SIZE {
+        result[i] = result[i - 3] + result[i - 2] + result[i - 1];
+        i += 1;
+    }
+    result
+}
+
+const TRIB_TABLE: [i32; 38] = tribonacci_table();
+
 impl Solution {
     pub fn tribonacci(n: i32) -> i32 {
-        let mut last_3 = [0, 1, 1];
-        if n <= 2 {
-            return last_3[n as usize];
-        }
-
-        let next_n = n - 3;
-        for _ in 0..next_n {
-            let next_num = last_3.iter().sum();
-            last_3 = [last_3[1], last_3[2], next_num];
-        }
-        last_3.iter().sum()
+        TRIB_TABLE[n as usize]
     }
 }
 
