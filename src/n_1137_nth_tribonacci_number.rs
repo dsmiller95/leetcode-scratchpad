@@ -7,17 +7,12 @@ impl Solution {
             return last_3[n as usize];
         }
 
-        let mut next_n = 3;
-
-        loop {
+        let next_n = n - 3;
+        for _ in 0..next_n {
             let next_num = last_3.iter().sum();
-            if next_n == n {
-                return next_num;
-            }
-
             last_3 = [last_3[1], last_3[2], next_num];
-            next_n += 1;
         }
+        last_3.iter().sum()
     }
 }
 
