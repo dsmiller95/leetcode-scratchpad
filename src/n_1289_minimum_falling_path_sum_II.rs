@@ -1,7 +1,6 @@
-use std::{cell::Cell, cmp::Ordering};
-
 struct Solution {}
 
+use std::{cell::Cell, cmp::Ordering};
 struct OrderedSlice<TItem, const SIZE: usize> {
     pub sorted_items: [Option<TItem>; SIZE],
 }
@@ -112,39 +111,40 @@ struct CellValue {
     best_value: i32,
 }
 
+const OPT_SIZE: usize = 3;
 impl Solution {
     pub fn min_falling_path_sum(grid: Vec<Vec<i32>>) -> i32 {
-        let top_3_per_row: Vec<[Option<OrderedEntry<usize, i32>>; 3]> = grid
-            .iter()
-            .map(|x| {
-                let mut slice = OrderedSlice::<_, 3>::new();
-                for (idx, cell_val) in x.iter().enumerate() {
-                    let entry = OrderedEntry {
-                        ordered_by: *cell_val,
-                        data: idx,
-                    };
-                    slice.push(entry);
-                }
-                slice.sorted_items
-            })
-            .collect();
+        let best_3_per_row = grid.into_iter().map(|x| {
+            let mut slice = OrderedSlice::<_, OPT_SIZE>::new();
+            for (idx, cell_val) in x.into_iter().enumerate() {
+                let entry = OrderedEntry {
+                    ordered_by: cell_val,
+                    data: idx,
+                };
+                slice.push(entry);
+            }
+            slice.sorted_items
+        });
+        let mut last_case = None;
 
-        let bottom_case = top_3_per_row[0];
-        let mut last_case = bottom_case;
+        for best_in_row in best_3_per_row {
+            let Some(last_case) = last_case.as_mut() else {
+                last_case = Some(best_in_row);
+                continue;
+            };
 
-        for best_in_row in top_3_per_row.iter().skip(1) {
-            let mut best_choices = OrderedSlice::<_, 3>::new();
+            let mut best_choices = OrderedSlice::<_, OPT_SIZE>::new();
 
             for entry in best_in_row {
-                let best_next = Solution::get_best_next(entry, &last_case);
+                let best_next = Solution::get_best_next(&entry, last_case);
 
                 best_choices.push_maybe(best_next);
             }
 
-            last_case = best_choices.sorted_items;
+            *last_case = best_choices.sorted_items;
         }
 
-        last_case[0].unwrap().ordered_by
+        last_case.unwrap()[0].unwrap().ordered_by
     }
 
     fn get_best_next<const SIZE: usize>(
