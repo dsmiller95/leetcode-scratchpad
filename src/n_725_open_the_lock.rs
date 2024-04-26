@@ -162,7 +162,7 @@ impl TryFrom<String> for CombinationPoint {
 }
 
 #[derive(PartialEq, Eq)]
-struct PriorityHeapEntry<TData, TPriority>
+struct OrderedEntry<TData, TPriority>
 where
     TPriority: Ord,
     TData: Eq,
@@ -171,7 +171,7 @@ where
     pub point: TData,
 }
 
-impl<TData, TPriority> PartialOrd for PriorityHeapEntry<TData, TPriority>
+impl<TData, TPriority> PartialOrd for OrderedEntry<TData, TPriority>
 where
     TPriority: Ord,
     TData: Eq,
@@ -181,7 +181,7 @@ where
     }
 }
 
-impl<TData, TPriority> Ord for PriorityHeapEntry<TData, TPriority>
+impl<TData, TPriority> Ord for OrderedEntry<TData, TPriority>
 where
     TPriority: Ord,
     TData: Eq,
