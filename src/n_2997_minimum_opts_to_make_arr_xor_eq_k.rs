@@ -10,27 +10,18 @@ impl Solution {
 
         xor_all ^= k;
 
-        Solution::count_bits(xor_all).into()
+        Solution::count_bits(xor_all)
     }
 
     fn count_bits(k: i32) -> i32 {
-        // let k: u32 = k.try_into().expect("k must be positive");
-
         let parts = [
-            (k & 0xFF),         // as u8,
-            ((k >> 8) & 0xFF),  // as u8,
-            ((k >> 16) & 0xFF), // as u8,
-            ((k >> 24) & 0xFF), // as u8,
+            (k & 0xFF),
+            ((k >> 8) & 0xFF),
+            ((k >> 16) & 0xFF),
+            ((k >> 24) & 0xFF),
         ];
 
         parts.map(Solution::count_bits_8).into_iter().sum()
-
-        // let mut total: u8 = 0;
-        // while k != 0 {
-        //     total += if k & 1 == 1 { 1 } else { 0 };
-        //     k >>= 1;
-        // }
-        // total
     }
 
     fn count_bits_8(mut k: i32) -> i32 {
@@ -44,7 +35,7 @@ impl Solution {
 
 #[cfg(test)]
 mod tests {
-    use crate::n_2997_minimum_opts_to_make_arr_xor_eq_k::Solution;
+    use super::*;
 
     #[test]
     fn test_one() {
