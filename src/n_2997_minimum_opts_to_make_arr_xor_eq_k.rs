@@ -14,13 +14,31 @@ impl Solution {
     }
 
     fn count_bits(k: i32) -> u8 {
-        let mut k: u32 = k.try_into().expect("k must be positive");
-        let mut total: u8 = 0;
-        while k != 0 {
-            total += if k & 1 == 1 { 1 } else { 0 };
-            k >>= 1;
-        }
-        total
+        let k: u32 = k.try_into().expect("k must be positive");
+
+        let parts = [
+            (k & 0xFF) as u8,
+            ((k >> 8) & 0xFF) as u8,
+            ((k >> 16) & 0xFF) as u8,
+            ((k >> 24) & 0xFF) as u8,
+        ];
+
+        parts.map(Solution::count_bits_8).into_iter().sum()
+
+        // let mut total: u8 = 0;
+        // while k != 0 {
+        //     total += if k & 1 == 1 { 1 } else { 0 };
+        //     k >>= 1;
+        // }
+        // total
+    }
+
+    fn count_bits_8(mut k: u8) -> u8 {
+        k = (k & 0x55) + (k >> 1 & 0x55);
+        k = (k & 0x33) + (k >> 2 & 0x33);
+        k = (k & 0x0f) + (k >> 4 & 0x0f);
+
+        k
     }
 }
 
