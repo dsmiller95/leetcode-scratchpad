@@ -1,21 +1,46 @@
 struct Solution();
 
+use core::panic;
 use std::collections::{HashMap, HashSet};
+
+#[derive(Default)]
+struct PairMatch {
+    has_negative: bool,
+    has_positive: bool,
+}
+
+impl PairMatch {
+    fn is_matched(&self) -> bool {
+        self.has_positive && self.has_negative
+    }
+}
+
 impl Solution {
     pub fn find_max_k(nums: Vec<i32>) -> i32 {
-        let mut num_table: HashSet<u16> = HashSet::with_capacity(nums.len() / 4);
+        let mut num_table: HashMap<u16, PairMatch> = HashMap::with_capacity(nums.len() / 4);
         let mut max_out: Option<u16> = None;
 
         for num in nums {
-            let num = num.unsigned_abs() as u16;
+            let num_abs = num.unsigned_abs() as u16;
 
-            let Some(existing_num) = num_table.replace(num) else {
+            let existing_entry = num_table.entry(num_abs).or_default();
+            match num {
+                ..=-1 => {
+                    existing_entry.has_negative = true;
+                }
+                1.. => {
+                    existing_entry.has_positive = true;
+                }
+                _ => panic!("num must not equal 0"),
+            }
+
+            if !existing_entry.is_matched() {
                 continue;
-            };
+            }
 
             max_out = Some(match max_out {
-                Some(x) => x.max(existing_num),
-                None => existing_num,
+                Some(x) => x.max(num_abs),
+                None => num_abs,
             });
         }
 
