@@ -52,13 +52,36 @@ impl ListNode {
         }
         result
     }
+
+    fn next_val(node: &Option<Box<ListNode>>) -> Option<i32> {
+        Some(node.as_ref()?.next.as_ref()?.val)
+    }
 }
 
 impl Solution {
     pub fn remove_nodes(head: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
-        let reversed = ListNode::reverse(head);
+        let mut reversed = ListNode::reverse(head);
+        let mut max = reversed.as_ref().map(|x| x.val).unwrap_or(i32::MIN);
+        let mut current_node = &mut reversed;
 
-        todo!()
+        while current_node.is_some() {
+            let Some(next_val) = ListNode::next_val(current_node) else {
+                break;
+            };
+
+            max = max.max(next_val);
+            if next_val < max {
+                let cur_val = current_node.as_mut().unwrap();
+                let old_next = cur_val.next.take();
+                let new_next = old_next.and_then(|x| x.next);
+                cur_val.next = new_next;
+            } else {
+                let cur_val = current_node.as_mut().unwrap();
+                current_node = &mut cur_val.next;
+            }
+        }
+
+        ListNode::reverse(reversed)
     }
 }
 
