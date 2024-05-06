@@ -1,6 +1,3 @@
-use core::panic;
-use std::borrow::{Borrow, BorrowMut};
-
 // Definition for singly-linked list.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct ListNode {
@@ -16,11 +13,44 @@ impl ListNode {
 }
 struct Solution();
 
+use core::panic;
+use std::borrow::{Borrow, BorrowMut};
 impl ListNode {
     fn reverse(node: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
-        let mut vec_vals = Self::to_vec(node);
-        vec_vals.reverse();
-        Self::from_vec(vec_vals)
+        let mut rev_head: Option<Box<ListNode>> = None;
+        let mut cur_head = node;
+
+        loop {
+            match (rev_head, cur_head) {
+                (Some(rev_head_val), Some(mut cur_head_val)) => {
+                    // take the next item out of the current list head, and insert it before the
+                    // head of the reversed list
+
+                    let next_next = cur_head_val.next.take();
+
+                    let mut new_rev_head = cur_head_val;
+                    new_rev_head.next = Some(rev_head_val);
+
+                    rev_head = Some(new_rev_head);
+                    cur_head = next_next;
+                }
+                (None, Some(mut cur_head_val)) => {
+                    // take the next item out of the current list head, and place it as the head of
+                    // the reversed list
+                    let next_next = cur_head_val.next.take();
+                    rev_head = Some(cur_head_val);
+                    cur_head = next_next;
+                }
+                (Some(rev_head_val), None) => {
+                    // there are no more items in the current list, we must be done.
+                    return Some(rev_head_val);
+                }
+                (None, None) => {
+                    // no items at all
+                    return None;
+                }
+            }
+        }
     }
 
     fn from_vec(vals: Vec<i32>) -> Option<Box<Self>> {
